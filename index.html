@@ -181,13 +181,13 @@
 <body>
   <div class="container">
     <div class="logo">
-      <h1>🎵 <span>MP3</span>ify</h1>
+      <h1>&#9835; <span>MP3</span>ify</h1>
       <p>Convierte videos de YouTube a MP3 gratis</p>
       <p style="color:rgba(255,255,255,0.35);font-size:12px;margin-top:4px;">by willy junior brito</p>
     </div>
 
     <div class="input-group">
-      <input type="text" id="urlInput" placeholder="Pega el enlace de YouTube aquí..." autocomplete="off">
+      <input type="text" id="urlInput" placeholder="Pega el enlace de YouTube aqu&iacute;..." autocomplete="off">
     </div>
 
     <select class="quality-select" id="qualitySelect">
@@ -208,31 +208,30 @@
     <div class="result" id="result">
       <img id="thumb" src="" alt="thumbnail">
       <div class="result-info">
-        <h3 id="songTitle">Título de la canción</h3>
-        <p id="songDuration">Duración</p>
+        <h3 id="songTitle">T&iacute;tulo de la canci&oacute;n</h3>
+        <p id="songDuration">Duraci&oacute;n</p>
       </div>
       <a class="btn-download" id="downloadBtn" download>Descargar</a>
     </div>
 
-    <div class="history-title" id="historyTitle">Últimas conversiones</div>
+    <div class="history-title" id="historyTitle">&Uacute;ltimas conversiones</div>
     <div class="history-list" id="historyList"></div>
 
     <div class="footer">
-      Creado por <strong>Willy Junior Brito</strong> — Solo conviertes enlaces públicos de YouTube. No almacenamos ningún archivo.
+      Creado por <strong>Willy Junior Brito</strong> &mdash; Solo conviertes enlaces p&uacute;blicos de YouTube. No almacenamos ning&uacute;n archivo.
     </div>
   </div>
 
   <script>
     const HISTORY_KEY = 'mp3ify_history';
+    const API_URL = 'https://TU-PROYECTO.vercel.app/api/convert';
 
-    // Carga el historial al iniciar
     document.addEventListener('DOMContentLoaded', loadHistory);
 
     document.getElementById('urlInput').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') convert();
     });
 
-    // Extraer ID de video de URL de YouTube
     function getVideoId(url) {
       const patterns = [
         /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
@@ -256,54 +255,12 @@
     function showResult(data) {
       const r = document.getElementById('result');
       r.classList.add('show');
-      document.getElementById('thumb').src = data.thumbnail || 'https://via.placeholder.com/64/1a1a2e/fff?text=♪';
-      document.getElementById('songTitle').textContent = data.title || 'Canción';
+      document.getElementById('thumb').src = data.thumbnail || 'https://via.placeholder.com/64/1a1a2e/fff?text=%E2%99%AA';
+      document.getElementById('songTitle').textContent = data.title || 'Canci&oacute;n';
       document.getElementById('songDuration').textContent = data.duration || 'Desconocido';
       const btn = document.getElementById('downloadBtn');
       btn.href = data.url;
       btn.download = (data.title || 'audio') + '.mp3';
-    }
-
-    // --- API de conversión ---
-    // Usa múltiples APIs gratuitas como fallback
-
-    async function convertWithAPI1(videoId, quality) {
-      const url = `https://www.yt-download.org/api/button/mp3/${videoId}`;
-      const resp = await fetch(url, { headers: { 'User-Agent': navigator.userAgent } });
-      const html = await resp.text();
-      // Busca el enlace de descarga en el HTML
-      const match = html.match(/href="([^"]+\.mp3[^"]*)"/);
-      if (match) return match[1];
-      throw new Error('No se encontró enlace MP3');
-    }
-
-    async function convertWithAPI2(videoId, quality) {
-      const url = `https://y2mate.nu/api/convert`;
-      const body = new URLSearchParams({
-        url: `https://www.youtube.com/watch?v=${videoId}`,
-        format: 'mp3',
-        quality: quality || '192'
-      });
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body
-      });
-      const data = await resp.json();
-      if (data.url) return data.url;
-      if (data.download) return data.download;
-      throw new Error('Error en la conversión');
-    }
-
-    async function fetchVideoInfo(videoId) {
-      const url = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`;
-      const resp = await fetch(url);
-      const data = await resp.json();
-      return {
-        title: data.title || 'Video',
-        thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-        duration: data.duration || ''
-      };
     }
 
     async function convert() {
@@ -313,58 +270,35 @@
       const url = input.value.trim();
 
       if (!url) { setStatus('Pega un enlace de YouTube primero', 'error'); return; }
-
       const videoId = getVideoId(url);
-      if (!videoId) { setStatus('Enlace de YouTube no válido', 'error'); return; }
+      if (!videoId) { setStatus('Enlace de YouTube no v&aacute;lido', 'error'); return; }
 
       btn.classList.add('loading');
       btn.disabled = true;
-      setStatus('Obteniendo información del video...', 'info');
+      setStatus('Convirtiendo...', 'info');
       document.getElementById('result').classList.remove('show');
 
       try {
-        // Obtener info del video
-        const info = await fetchVideoInfo(videoId);
-
-        setStatus('Convirtiendo a MP3...', 'info');
-
-        // Intentar conversión con diferentes APIs
-        let downloadUrl = null;
-        const apis = [
-          () => convertWithAPI2(videoId, quality),
-          () => convertWithAPI1(videoId, quality),
-        ];
-
-        for (const api of apis) {
-          try {
-            downloadUrl = await api();
-            if (downloadUrl) break;
-          } catch (e) {
-            console.warn('API falló:', e.message);
-          }
-        }
-
-        if (!downloadUrl) throw new Error('No se pudo obtener enlace de descarga');
+        const resp = await fetch(`${API_URL}?videoId=${videoId}&quality=${quality}`);
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error);
 
         showResult({
-          title: info.title,
-          thumbnail: info.thumbnail,
-          duration: info.duration,
-          url: downloadUrl
+          title: data.title,
+          thumbnail: data.thumbnail,
+          duration: data.duration + 's',
+          url: data.url
         });
-
-        setStatus('¡Conversión completada!', 'success');
-        addToHistory(info.title, videoId, downloadUrl);
+        setStatus('&iexcl;Conversi&oacute;n completada!', 'success');
+        addToHistory(data.title, videoId, data.url);
         loadHistory();
       } catch (e) {
-        setStatus('Error: ' + e.message + '. Intenta de nuevo.', 'error');
+        setStatus('Error: ' + e.message, 'error');
       } finally {
         btn.classList.remove('loading');
         btn.disabled = false;
       }
     }
-
-    // --- Historial ---
 
     function addToHistory(title, videoId, url) {
       const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');

@@ -1,0 +1,8 @@
+{
+  "name": "mp3ify-backend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.3"
+  }
+}
