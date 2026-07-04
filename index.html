@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Youtube a MP3 - Convertidor Gratuito</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 40px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo h1 {
+      color: #fff;
+      font-size: 28px;
+      font-weight: 800;
+    }
+    .logo h1 span { color: #e74c3c; }
+    .logo p {
+      color: rgba(255,255,255,0.5);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+    .input-group {
+      position: relative;
+      margin-bottom: 16px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: 0.3s;
+    }
+    .input-group input:focus {
+      border-color: #e74c3c;
+      background: rgba(255,255,255,0.12);
+    }
+    .input-group input::placeholder { color: rgba(255,255,255,0.35); }
+    .quality-select {
+      width: 100%;
+      padding: 14px 20px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      margin-bottom: 16px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='white' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 18px center;
+    }
+    .quality-select option { background: #1a1a2e; color: #fff; }
+    .btn-convert {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-convert:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(231,76,60,0.4); }
+    .btn-convert:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-convert .spinner {
+      width: 20px; height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+    .btn-convert.loading .spinner { display: block; }
+    .btn-convert.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      display: none;
+    }
+    .status.error { display: block; background: rgba(231,76,60,0.15); color: #e74c3c; border: 1px solid rgba(231,76,60,0.3); }
+    .status.success { display: block; background: rgba(46,204,113,0.15); color: #2ecc71; border: 1px solid rgba(46,204,113,0.3); }
+    .status.info { display: block; background: rgba(52,152,219,0.15); color: #3498db; border: 1px solid rgba(52,152,219,0.3); }
+    .result {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      display: none;
+      align-items: center;
+      gap: 16px;
+    }
+    .result.show { display: flex; }
+    .result img {
+      width: 64px; height: 64px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+    .result-info { flex: 1; min-width: 0; }
+    .result-info h3 { color: #fff; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .result-info p { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 4px; }
+    .btn-download {
+      padding: 10px 20px;
+      background: #2ecc71;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: 0.3s;
+    }
+    .btn-download:hover { background: #27ae60; }
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      color: rgba(255,255,255,0.25);
+      font-size: 12px;
+    }
+    .footer a { color: rgba(255,255,255,0.35); }
+    .history-title {
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      margin-top: 24px;
+      display: none;
+    }
+    .history-list { margin-top: 8px; }
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .history-item:hover { background: rgba(255,255,255,0.08); }
+    .history-item span { color: rgba(255,255,255,0.7); font-size: 13px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .history-item small { color: rgba(255,255,255,0.3); font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>🎵 <span>MP3</span>ify</h1>
+      <p>Convierte videos de YouTube a MP3 gratis</p>
+      <p style="color:rgba(255,255,255,0.35);font-size:12px;margin-top:4px;">by willy junior brito</p>
+    </div>
+
+    <div class="input-group">
+      <input type="text" id="urlInput" placeholder="Pega el enlace de YouTube aquí..." autocomplete="off">
+    </div>
+
+    <select class="quality-select" id="qualitySelect">
+      <option value="320">MP3 - 320 kbps (Mejor calidad)</option>
+      <option value="256">MP3 - 256 kbps</option>
+      <option value="192" selected>MP3 - 192 kbps (Recomendado)</option>
+      <option value="128">MP3 - 128 kbps</option>
+      <option value="96">MP3 - 96 kbps (Ahorro)</option>
+    </select>
+
+    <button class="btn-convert" id="convertBtn" onclick="convert()">
+      <span class="btn-text">Convertir a MP3</span>
+      <span class="spinner"></span>
+    </button>
+
+    <div class="status" id="status"></div>
+
+    <div class="result" id="result">
+      <img id="thumb" src="" alt="thumbnail">
+      <div class="result-info">
+        <h3 id="songTitle">Título de la canción</h3>
+        <p id="songDuration">Duración</p>
+      </div>
+      <a class="btn-download" id="downloadBtn" download>Descargar</a>
+    </div>
+
+    <div class="history-title" id="historyTitle">Últimas conversiones</div>
+    <div class="history-list" id="historyList"></div>
+
+    <div class="footer">
+      Creado por <strong>Willy Junior Brito</strong> — Solo conviertes enlaces públicos de YouTube. No almacenamos ningún archivo.
+    </div>
+  </div>
+
+  <script>
+    const HISTORY_KEY = 'mp3ify_history';
+
+    // Carga el historial al iniciar
+    document.addEventListener('DOMContentLoaded', loadHistory);
+
+    document.getElementById('urlInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') convert();
+    });
+
+    // Extraer ID de video de URL de YouTube
+    function getVideoId(url) {
+      const patterns = [
+        /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+        /(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+        /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /(?:youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
+      ];
+      for (const p of patterns) {
+        const m = url.match(p);
+        if (m) return m[1];
+      }
+      return null;
+    }
+
+    function setStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+    }
+
+    function showResult(data) {
+      const r = document.getElementById('result');
+      r.classList.add('show');
+      document.getElementById('thumb').src = data.thumbnail || 'https://via.placeholder.com/64/1a1a2e/fff?text=♪';
+      document.getElementById('songTitle').textContent = data.title || 'Canción';
+      document.getElementById('songDuration').textContent = data.duration || 'Desconocido';
+      const btn = document.getElementById('downloadBtn');
+      btn.href = data.url;
+      btn.download = (data.title || 'audio') + '.mp3';
+    }
+
+    // --- API de conversión ---
+    // Usa múltiples APIs gratuitas como fallback
+
+    async function convertWithAPI1(videoId, quality) {
+      const url = `https://www.yt-download.org/api/button/mp3/${videoId}`;
+      const resp = await fetch(url, { headers: { 'User-Agent': navigator.userAgent } });
+      const html = await resp.text();
+      // Busca el enlace de descarga en el HTML
+      const match = html.match(/href="([^"]+\.mp3[^"]*)"/);
+      if (match) return match[1];
+      throw new Error('No se encontró enlace MP3');
+    }
+
+    async function convertWithAPI2(videoId, quality) {
+      const url = `https://y2mate.nu/api/convert`;
+      const body = new URLSearchParams({
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        format: 'mp3',
+        quality: quality || '192'
+      });
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+      const data = await resp.json();
+      if (data.url) return data.url;
+      if (data.download) return data.download;
+      throw new Error('Error en la conversión');
+    }
+
+    async function fetchVideoInfo(videoId) {
+      const url = `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      return {
+        title: data.title || 'Video',
+        thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        duration: data.duration || ''
+      };
+    }
+
+    async function convert() {
+      const btn = document.getElementById('convertBtn');
+      const input = document.getElementById('urlInput');
+      const quality = document.getElementById('qualitySelect').value;
+      const url = input.value.trim();
+
+      if (!url) { setStatus('Pega un enlace de YouTube primero', 'error'); return; }
+
+      const videoId = getVideoId(url);
+      if (!videoId) { setStatus('Enlace de YouTube no válido', 'error'); return; }
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+      setStatus('Obteniendo información del video...', 'info');
+      document.getElementById('result').classList.remove('show');
+
+      try {
+        // Obtener info del video
+        const info = await fetchVideoInfo(videoId);
+
+        setStatus('Convirtiendo a MP3...', 'info');
+
+        // Intentar conversión con diferentes APIs
+        let downloadUrl = null;
+        const apis = [
+          () => convertWithAPI2(videoId, quality),
+          () => convertWithAPI1(videoId, quality),
+        ];
+
+        for (const api of apis) {
+          try {
+            downloadUrl = await api();
+            if (downloadUrl) break;
+          } catch (e) {
+            console.warn('API falló:', e.message);
+          }
+        }
+
+        if (!downloadUrl) throw new Error('No se pudo obtener enlace de descarga');
+
+        showResult({
+          title: info.title,
+          thumbnail: info.thumbnail,
+          duration: info.duration,
+          url: downloadUrl
+        });
+
+        setStatus('¡Conversión completada!', 'success');
+        addToHistory(info.title, videoId, downloadUrl);
+        loadHistory();
+      } catch (e) {
+        setStatus('Error: ' + e.message + '. Intenta de nuevo.', 'error');
+      } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    }
+
+    // --- Historial ---
+
+    function addToHistory(title, videoId, url) {
+      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      history.unshift({ title, videoId, url, date: new Date().toISOString() });
+      if (history.length > 10) history.pop();
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+      const container = document.getElementById('historyList');
+      const title = document.getElementById('historyTitle');
+      if (history.length === 0) { title.style.display = 'none'; container.innerHTML = ''; return; }
+      title.style.display = 'block';
+      container.innerHTML = history.map((item, i) => `
+        <div class="history-item" onclick="document.getElementById('urlInput').value='https://www.youtube.com/watch?v=${item.videoId}'; document.getElementById('convertBtn').click()">
+          <span>${item.title || 'Video'}</span>
+          <small>${new Date(item.date).toLocaleDateString()}</small>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
